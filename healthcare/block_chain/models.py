@@ -1,18 +1,13 @@
-from __future__ import unicode_literals
-
-from django.db import models
-
 import hashlib
 import json
-from time import time
 from urllib.parse import urlparse
 
 import requests
 from django.conf import settings
 
-address = settings.SELF_ADDRESS
 # Instantiate the Blockchain
 blockchain = Blockchain()
+node = Node()
 
 class Node():
     def __init__(self):
@@ -22,7 +17,7 @@ class Node():
         """
         # nodes = Fetch the list of all nodes from DB
         if len(nodes) == 0:
-            self.register_node(address)
+            self.register_node(settings.SELF_ADDRESS)
 
     def register_node(self, address):
         """
@@ -33,6 +28,10 @@ class Node():
 
         parsed_url = urlparse(address)
         self.nodes.add(parsed_url.netloc)
+        self.save()
+
+    def save(self):
+        # SAVE self.nodes into MongoDB
 
 class BlockChain():
     def __init__(self):
@@ -114,7 +113,6 @@ class Block:
             'records': [record]
         }
         blockchain.last_block = block
-        #TODO Save the new_block in MongoDB
 
         return block
         
@@ -130,8 +128,13 @@ class Block:
     def add_record(self, record):
         if len(blockchain.last_block['records']) == settings.MAX_BLOCKS:
             new_block = self.new_block(record=record)
-        # Save new_block into MongoDB
+        else:
+            new_block = get_last_block()['records'].append(record)
 
+        self.save(new_block)
+
+    def save(block):
+        #TODO: Insert if not exists, the block into the MongoDB - Upsert
 
 class Record:
     def __init__(self, public_key, personal_details, medical_details):
@@ -143,7 +146,6 @@ class Record:
 
     @property
     def previous_record_hash(self):
-        # Get the last block
         last_block = Block.get_last_block()
         if len(last_block.transactions[-1]) > 0:
             return self.hash(transactions)
