@@ -1,22 +1,20 @@
 import hashlib
 import json
-from urllib.parse import urlparse
+from urlparse import urlparse
 import views
 import requests
 from django.conf import settings
 
 # Instantiate the Blockchain
-blockchain = Blockchain()
-node = Node()
 
 class Node():
     def __init__(self):
-        nodes=set()
+        self.nodes=set()
         """
         Set of nodes in the blockchain
         """
         # nodes = Fetch the list of all nodes from DB
-        if len(nodes) == 0:
+        if len(self.nodes) == 0:
             self.register_node(settings.SELF_ADDRESS)
 
     def register_node(self, address):
@@ -32,21 +30,29 @@ class Node():
         self.save()
 
     def get_all_nodes():
-        return list(node.nodes)
+        return list(self.nodes)
 
     def save(self):
+        pass
         # SAVE self.nodes into MongoDB
 
 class BlockChain():
     def __init__(self):
-        self.last_block = get_last_block()
+        self.last_block = self.get_last_block()
 
     @property
     def chain(self):
+        pass
         #TODO Read the entire blockchain from MongoDB
 
     def get_user_records(self, public_key):
+        pass
         #Fetch all records with given public key
+
+    @staticmethod
+    def get_last_block():
+        pass
+        #TODO Read the last block from MongoDB and return
 
     def validate_chain(self, chain):
         """
@@ -61,8 +67,8 @@ class BlockChain():
 
         while current_index < len(chain):
             block = chain[current_index]
-            print(f'{last_block}')
-            print(f'{block}')
+            print(last_block)
+            print(block)
             print("\n-----------\n")
             # Check that the hash of the block is correct
             if block['previous_hash'] != Block.hash(last_block):
@@ -93,7 +99,7 @@ class BlockChain():
 
         # Grab and verify the chains from all the nodes in our network
         for node in neighbours:
-            response = requests.get(f'http://{node}/chain')
+            response = requests.get('http://'+node+'/chain')
 
             if response.status_code == 200:
                 length = response.json()['length']
@@ -111,6 +117,7 @@ class BlockChain():
 
         return False
 
+blockchain = BlockChain()
 
 class Block:
     def new_block(self, record, previous_hash):
@@ -124,27 +131,27 @@ class Block:
         return block
         
     def previous_block_hash():
+        #TODO Take the latest block and hash it
+        # hash function is available below
+        pass
         #TODO
-
-    @staticmethod
-    def get_last_block():
-        #TODO Read the last block from MongoDB and return
 
     @property
     def last_block_id(self):
-        return self.get_last_block().get('id')
+        return blockchain.get_last_block().get('id')
 
 
     def add_record(self, record):
         if len(blockchain.last_block['records']) == settings.MAX_BLOCKS:
             new_block = self.new_block(record=record)
         else:
-            new_block = get_last_block()['records'].append(record)
+            new_block = blockchain.get_last_block()['records'].append(record)
 
         self.save(new_block)
         views.notify(record=record.get_record_as_json())
 
     def save(block):
+        pass
         #TODO: Insert if not exists, the block into the MongoDB - Upsert
 
 class Record:
@@ -156,15 +163,20 @@ class Record:
         self.medical_details = medical_details
 
     def get_record_as_json(self):
+        #self will be a Record class object
+        # properties u will get as record.id , record. public_key etc.
+        # Convert to JSON
+        pass
         # convert values from self and convert it as a json
 
     @staticmethod
     def encrypt(data):
+        pass
         #TODO encrypt the data to send
 
     @property
     def previous_record_hash(self):
-        last_block = Block.get_last_block()
+        last_block = blockchain.get_last_block()
         return hash(last_block['records'][-1])
 
     @property
@@ -207,6 +219,6 @@ class Record:
         :return: True if correct, False if not.
         """
 
-        guess = f'{last_proof}{proof}'.encode()
+        guess = last_proof[proof].encode()
         guess_hash = hashlib.sha256(guess).hexdigest()
         return guess_hash[:4] == "0000"

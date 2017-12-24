@@ -2,12 +2,15 @@ from django.shortcuts import render
 from django.conf import settings
 from uuid import uuid4
 from django.contrib.sessions.backends.db import SessionStore
-from models import blockchain, node, Block, Record
+from models import *
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
 
 # Instantiate the Node
 # Generate a globally unique address for this node
 node_identifier = str(uuid4()).replace('-', '')
 initial_node = False
+# node = Node()
 
 #Move the IP checking to decorators
 def get_ip(request):
@@ -25,7 +28,7 @@ def notify(address=False, record=False):
     node_list = node.get_all_nodes()
     next_node = node_list[node_list.index(settings.SELF_ADDRESS) + 1]
     data = get_notification_data('address', address) if address else get_notification_data('record', record)
-    r = requests.post(f'http://{next_node}/notify', data=data)
+    r = requests.post('http://' + next_node +'/notify', data=data)
 
 def get_notification_data(notification_type, data):
     return {
@@ -33,7 +36,9 @@ def get_notification_data(notification_type, data):
         'data': data
     }
 
+@csrf_exempt
 def get_notified(request):
+    import pdb; pdb.set_trace()
     global initial_node
     if initial_node:
         initial_node = False
@@ -47,6 +52,8 @@ def get_notified(request):
             block.add_record(Record(record['public_key'], record['personal_details'], record['medical_details']))
             notify(record=record)
 
+def get_user_records(request):
+    return blockchain.get_user_records(request.data.get('public_key'))
 
 def new_record(request):
     data = request.POST.get('data')
@@ -55,8 +62,9 @@ def new_record(request):
     required = ['public_key', 'personal_details', 'medical_details']
     if not all(k in data for k in required):
         return 'Missing values', 400
-    add.record(data.get('public_key'), data.get('personal_detail'), data.get('medical_detail'))
 
+    block = Block()
+    block.add_record(Record(record['public_key'], record['personal_details'], record['medical_details']))
 
     #TODO
     response = blockchain.get_user_records(data.get('public_key'))
@@ -65,25 +73,7 @@ def new_record(request):
 def join_request(request):
     ip = get_ip(request)
     node.register_node(ip)
-    notify(address=ip)
     return HttpResponse(json.dumps(blockchain.chain),  mimetype="application/json")
-
-def register_nodes():
-    values = request.get_json()
-
-    nodes = values.get('nodes')
-    if nodes is None:
-        return "Error: Please supply a valid list of nodes", 400
-
-    for node in nodes:
-        blockchain.register_node(node)
-
-    response = {
-        'message': 'New nodes have been added',
-        'total_nodes': list(blockchain.nodes),
-    }
-    return jsonify(response), 201
-
 
 def consensus():
     replaced = blockchbain.resolve_conflicts()
