@@ -1,7 +1,7 @@
 import hashlib
 import json
 from urllib.parse import urlparse
-
+import views
 import requests
 from django.conf import settings
 
@@ -28,7 +28,11 @@ class Node():
 
         parsed_url = urlparse(address)
         self.nodes.add(parsed_url.netloc)
+        views.notify(address=address)
         self.save()
+
+    def get_all_nodes():
+        return list(node.nodes)
 
     def save(self):
         # SAVE self.nodes into MongoDB
@@ -40,6 +44,9 @@ class BlockChain():
     @property
     def chain(self):
         #TODO Read the entire blockchain from MongoDB
+
+    def get_user_records(self, public_key):
+        #Fetch all records with given public key
 
     def validate_chain(self, chain):
         """
@@ -116,6 +123,9 @@ class Block:
 
         return block
         
+    def previous_block_hash():
+        #TODO
+
     @staticmethod
     def get_last_block():
         #TODO Read the last block from MongoDB and return
@@ -132,6 +142,7 @@ class Block:
             new_block = get_last_block()['records'].append(record)
 
         self.save(new_block)
+        views.notify(record=record.get_record_as_json())
 
     def save(block):
         #TODO: Insert if not exists, the block into the MongoDB - Upsert
@@ -141,14 +152,20 @@ class Record:
         self.id = self.last_record_id() + 1
         self.public_key = public_key
         self.previous_hash = self.previous_record_hash
-        self.personal_details = personal_details
+        self.personal_details = self.encrypt(personal_details)
         self.medical_details = medical_details
+
+    def get_record_as_json(self):
+        # convert values from self and convert it as a json
+
+    @staticmethod
+    def encrypt(data):
+        #TODO encrypt the data to send
 
     @property
     def previous_record_hash(self):
         last_block = Block.get_last_block()
-        if len(last_block.transactions[-1]) > 0:
-            return self.hash(transactions)
+        return hash(last_block['records'][-1])
 
     @property
     def last_block(self):
@@ -167,31 +184,29 @@ class Record:
         block_string = json.dumps(data, sort_keys=True).encode()
         return hashlib.sha256(block_string).hexdigest()
 
+    def proof_of_work(self, last_proof):
+        """
+        Simple Proof of Work Algorithm:
+         - Find a number p' such that hash(pp') contains leading 4 zeroes, where p is the previous p'
+         - p is the previous proof, and p' is the new proof
+        """
 
-    #Commenting for now. Yet to finalize if needed
-    # def proof_of_work(self, last_proof):
-    #     """
-    #     Simple Proof of Work Algorithm:
-    #      - Find a number p' such that hash(pp') contains leading 4 zeroes, where p is the previous p'
-    #      - p is the previous proof, and p' is the new proof
-    #     """
+        proof = 0
+        while self.valid_proof(last_proof, proof) is False:
+            proof += 1
 
-    #     proof = 0
-    #     while self.valid_proof(last_proof, proof) is False:
-    #         proof += 1
+        return proof
 
-    #     return proof
+    @staticmethod
+    def valid_proof(last_proof, proof):
+        """
+        Validates the Proof
 
-    # @staticmethod
-    # def valid_proof(last_proof, proof):
-    #     """
-    #     Validates the Proof
+        :param last_proof: Previous Proof
+        :param proof: Current Proof
+        :return: True if correct, False if not.
+        """
 
-    #     :param last_proof: Previous Proof
-    #     :param proof: Current Proof
-    #     :return: True if correct, False if not.
-    #     """
-
-    #     guess = f'{last_proof}{proof}'.encode()
-    #     guess_hash = hashlib.sha256(guess).hexdigest()
-    #     return guess_hash[:4] == "0000"
+        guess = f'{last_proof}{proof}'.encode()
+        guess_hash = hashlib.sha256(guess).hexdigest()
+        return guess_hash[:4] == "0000"
