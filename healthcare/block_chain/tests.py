@@ -165,10 +165,10 @@ class BlockChain:
     def __init__(self):
         self.latest_block = self.get_latest_block()
 
-    @property
     def chain(self):
-        pass
-        #TODO Read the entire blockchain from MongoDB
+        db = MongoDB().connect()
+        records = json.loads(dumps(db.find()))
+        return records
 
     def get_user_records(self, public_key):
         db = MongoDB().connect()
