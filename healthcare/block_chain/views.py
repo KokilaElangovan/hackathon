@@ -6,6 +6,14 @@ from models import *
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from block_chain.tests import Block, BlockChain, Record, Node
+from rest_framework.response import Response
+import os, json
+import base64
+import binascii
+from Crypto.Cipher import AES
+
+blocksize = 16
+padding = '{'
 
 # from django.apps import apps
 # Block = apps.get_model('block_chain', 'Block')
@@ -52,24 +60,25 @@ def get_notified(request):
         elif post_data.get('type') == 'node':
             record = post_data
             # block = Block()
-            add_record(Record(record['public_key'], record['personal_details'], record['medical_details']))
+            add_record(Record(record['public_key'], encryption(record['public_key'], record['personal_details']), record['medical_details']))
             notify(record=record)
 
 def get_user_records(request):
-    return blockchain.get_user_records(request.data.get('public_key'))
+    print request.body
+    user_records=BlockChain().get_user_records(json.loads(request.body)['public_key'])
+    print type(user_records), '--------list--------'
+    return HttpResponse(json.dumps(user_records))
+
 
 def new_record(request):
-    data = request.POST
+    data = json.loads(request.body)
     block = Block()
-    blockchain = BlockChain()
-    #get lastest block
-    latest_block = blockchain.latest_block
+    # blockchain = BlockChain()
+    # latest_block = blockchain.latest_block
     print data , '---------------------data---------------'
     record = Record(data['public_key'], data['personal_details'], data['medical_details'])
     block.add_record(record)
 
-    #TODO
-    # response = blockchain.get_user_records(data.get('public_key'))
     return HttpResponse(status=200, content_type="application/json")
 
 def join_request(request):
@@ -129,3 +138,23 @@ def mine():
 #     port = args.port
 
 #     app.run(host='0.0.0.0', port=port)
+
+def get_public_key(request):
+    secret = os.urandom(blocksize)
+    public_key = binascii.hexlify(secret)
+    return HttpResponse(json.dumps({'public_key':public_key}))
+
+def encryption(secret, data):
+    secret = binascii.unhexlify(secret)
+    pad = lambda s: s + (blocksize - len(s) %blocksize) * padding
+    encodeAES = lambda c, s: base64.b64encode(c.encrypt(pad(s)))
+    cipher = AES.new(secret)
+    encoded = encodeAES(cipher, data)
+    return encoded
+
+def decryption(secret, data):
+    secret = binascii.unhexlify(secret)
+    DecodeAES = lambda c, e : c.decrypt(base64.b64decode(e)).rstrip(padding)
+    cipher = AES.new(secret)
+    decode = DecodeAES(cipher, data)
+    return decode

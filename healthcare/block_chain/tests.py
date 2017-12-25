@@ -56,9 +56,10 @@ class Block:
 
     @property
     def latest_block_id(self):
-        return BlockChain.get_latest_block().get('_id')
+        return BlockChain.get_latest_block().get('_id', 0)
 
     def add_record(self, record):
+        import pdb;pdb.set_trace()
         if 'records' in BlockChain.get_latest_block().keys() and len(BlockChain.get_latest_block()['records']) <= 3:
             self.save_record(BlockChain.get_latest_block(), record)
             # new_record = self.new_record(record, self.previous_block_hash())
@@ -68,7 +69,7 @@ class Block:
             self.new_block()
             self.save_record(BlockChain.get_latest_block(), record)
 
-        notify(record=record.get_record_as_json())
+        # notify(record=record.get_record_as_json())
 
     def save_block(self, block):
         db = MongoDB().connect()
@@ -82,6 +83,7 @@ class Block:
 class Record:
     def __init__(self, public_key, personal_details, medical_details):
         self.id = self.latest_record_id() + 1
+        print self.latest_record_id() + 1, '------------record------latestid'
         self.public_key = public_key
         self.previous_hash = self.previous_record_hash
         self.personal_details = personal_details
@@ -162,15 +164,25 @@ class BlockChain:
         #TODO Read the entire blockchain from MongoDB
 
     def get_user_records(self, public_key):
-        pass
+        db = MongoDB().connect()
+        records=json.loads(dumps(db.find()))
+        user_records = []
+        for block in range(4,records[-1]['_id']):
+            for record in records[block]['records']:
+              if record['public_key'] == public_key:
+                user_records.append(record)
+        return user_records
         #Fetch all records with given public key
 
     @staticmethod
     def get_latest_block():
-        #TODO get the latest block from blockchain
         db = MongoDB().connect()
         latest_block = dumps(db.find().sort("_id",-1).limit(1))
-        return loads(latest_block)[0]
+        print len(latest_block), '-----------length latest block----------------'
+        if len(latest_block) < 1:
+            return loads(latest_block)[0]
+        else :
+            return {}
 
     def validate_chain(self, chain):
         """
