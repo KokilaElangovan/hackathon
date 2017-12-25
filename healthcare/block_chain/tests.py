@@ -57,11 +57,16 @@ class Block:
         self.save_block(block)
         
     def previous_block_hash(self):
-        BlockChain.get_latest_block().get('previous_block_hash', 'previous_block_hash')
+        return (self.hashme(json.dumps(BlockChain.get_latest_block().get('previous_hash'))))
 
     @property
     def latest_block_id(self):
         return BlockChain.get_latest_block().get('_id', 0)
+
+    def hashme(self,msg):
+        if type(msg)!=str:
+            msg = json.dumps(msg)
+        return hashlib.sha256(str(msg).encode('utf-8')).hexdigest()
 
     def add_record(self, record):
         blockchain = BlockChain.get_latest_block()

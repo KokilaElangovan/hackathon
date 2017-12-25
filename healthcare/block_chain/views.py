@@ -24,8 +24,7 @@ def new_record(request):
     block = Block()
     record = Record(data['public_key'], data['personal_details'], data['medical_details'])
     block.add_record(record)
-    print '-----------------------------------------------------'
-    return HttpResponse(status=200)
+    return HttpResponse({'comment' : 'record added successfully'}, status=200)
 
 def get_public_key(request):
     secret = os.urandom(blocksize)
