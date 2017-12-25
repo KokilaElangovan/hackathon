@@ -9,6 +9,13 @@ import requests
 from django.conf import settings
 from bson.json_util import dumps, loads
 from root.dbconnections import MongoDB
+import os, json
+import base64
+import binascii
+from Crypto.Cipher import AES
+
+blocksize = 16
+padding = '{'
 
 class Node:
     def __init__(self):
@@ -68,9 +75,17 @@ class Block:
         db = MongoDB().connect()
         db.insert(block)
 
+    def encryption(self, secret, data):
+      secret = binascii.unhexlify(secret)
+      pad = lambda s: s + (blocksize - len(s) %blocksize) * padding
+      encodeAES = lambda c, s: base64.b64encode(c.encrypt(pad(s)))
+      cipher = AES.new(secret)
+      encoded = encodeAES(cipher, data)
+      return encoded
+
     def save_record(self, block, record):
         db = MongoDB().connect()
-        record = {'id': record.id, 'public_key':record.public_key, 'previous_record_hash':record.previous_record_hash, 'personal_details':record.personal_details, 'medical_details':record.medical_details}
+        record = {'id': record.id, 'public_key':record.public_key, 'previous_record_hash':record.previous_record_hash, 'personal_details':self.encryption(record.public_key,json.dumps(record.personal_details)), 'medical_details':record.medical_details}
         db.update({'_id':block['_id']},{'$push' : {'records' : record}})
 
 class Record:
@@ -159,10 +174,10 @@ class BlockChain:
         db = MongoDB().connect()
         records=json.loads(dumps(db.find()))
         user_records = []
-        for block in range(1,records[-1]['_id']):
+        for block in range(records[-1]['_id']):
             for record in records[block]['records']:
               if record['public_key'] == public_key:
-                record['personal_details'] = decryption(public_key, record['personal_details'])
+                record['personal_details'] = self.decryption(public_key, record['personal_details'])
                 user_records.append(record)
         return user_records
 
@@ -174,7 +189,7 @@ class BlockChain:
             return latest_block[0]
         else :
             return {}
-    def decryption(secret, data):
+    def decryption(self, secret, data):
         secret = binascii.unhexlify(secret)
         DecodeAES = lambda c, e : c.decrypt(base64.b64decode(e)).rstrip(padding)
         cipher = AES.new(secret)

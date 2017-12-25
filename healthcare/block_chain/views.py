@@ -60,10 +60,11 @@ def get_notified(request):
         elif post_data.get('type') == 'node':
             record = post_data
             # block = Block()
-            add_record(Record(record['public_key'], encryption(record['public_key'], record['personal_details']), record['medical_details']))
+            add_record(Record(record['public_key'], record['personal_details'], record['medical_details']))
             notify(record=record)
 
 def get_user_records(request):
+    print json.loads(request.body)
     user_records=BlockChain().get_user_records(json.loads(request.body)['public_key'])
     return HttpResponse(json.dumps(user_records))
 
@@ -140,13 +141,13 @@ def get_public_key(request):
     public_key = binascii.hexlify(secret)
     return HttpResponse(json.dumps({'public_key':public_key}))
 
-def encryption(secret, data):
-    secret = binascii.unhexlify(secret)
-    pad = lambda s: s + (blocksize - len(s) %blocksize) * padding
-    encodeAES = lambda c, s: base64.b64encode(c.encrypt(pad(s)))
-    cipher = AES.new(secret)
-    encoded = encodeAES(cipher, data)
-    return encoded
+# def encryption(secret, data):
+#     secret = binascii.unhexlify(secret)
+#     pad = lambda s: s + (blocksize - len(s) %blocksize) * padding
+#     encodeAES = lambda c, s: base64.b64encode(c.encrypt(pad(s)))
+#     cipher = AES.new(secret)
+#     encoded = encodeAES(cipher, data)
+#     return encoded
 
 # def decryption(secret, data):
 #     secret = binascii.unhexlify(secret)
