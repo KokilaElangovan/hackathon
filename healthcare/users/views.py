@@ -195,8 +195,7 @@ class ListPrescriptionView(APIView):
 
     def get(self, request):
         list_prescription_url = 'http://172.24.144.96:8000/block_chain/get_record/'
-        public_key = request.user.userprofile.get(public_key, '')
-        response = requests.post(list_prescription_url, json.dumps({ "public_key": public_key}), headers = {'content-type': 'application/x-ww-form-url-encoded'})
+        response = requests.post(list_prescription_url, json.dumps({ "public_key": '18b98a34a58bbda290f8eee97664e9c4'}), headers = {'content-type': 'application/x-ww-form-url-encoded'})
         json_loads = json.loads(response.content)
         return Response(json_loads, status=status.HTTP_200_OK)
 
