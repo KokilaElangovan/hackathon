@@ -5,6 +5,10 @@ from django.contrib.sessions.backends.db import SessionStore
 from models import *
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
+from block_chain.tests import Block, BlockChain, Record, Node
+
+# from django.apps import apps
+# Block = apps.get_model('block_chain', 'Block')
 
 # Instantiate the Node
 # Generate a globally unique address for this node
@@ -38,7 +42,6 @@ def get_notification_data(notification_type, data):
 
 @csrf_exempt
 def get_notified(request):
-    import pdb; pdb.set_trace()
     global initial_node
     if initial_node:
         initial_node = False
@@ -47,28 +50,27 @@ def get_notified(request):
         if post_data.get('type') == 'address':
             notify(address=post_data.get('data'))
         elif post_data.get('type') == 'node':
-            record = post_data.get('data')
-            block = Block()
-            block.add_record(Record(record['public_key'], record['personal_details'], record['medical_details']))
+            record = post_data
+            # block = Block()
+            add_record(Record(record['public_key'], record['personal_details'], record['medical_details']))
             notify(record=record)
 
 def get_user_records(request):
     return blockchain.get_user_records(request.data.get('public_key'))
 
 def new_record(request):
-    data = request.POST.get('data')
-
-    # Check that the required fields are in the POST'ed data
-    required = ['public_key', 'personal_details', 'medical_details']
-    if not all(k in data for k in required):
-        return 'Missing values', 400
-
+    data = request.POST
     block = Block()
-    block.add_record(Record(record['public_key'], record['personal_details'], record['medical_details']))
+    blockchain = BlockChain()
+    #get lastest block
+    latest_block = blockchain.latest_block
+    print data , '---------------------data---------------'
+    record = Record(data['public_key'], data['personal_details'], data['medical_details'])
+    block.add_record(record)
 
     #TODO
-    response = blockchain.get_user_records(data.get('public_key'))
-    return HttpResponse(json.dumps(response), mimetype="application/json")
+    # response = blockchain.get_user_records(data.get('public_key'))
+    return HttpResponse(status=200, content_type="application/json")
 
 def join_request(request):
     ip = get_ip(request)

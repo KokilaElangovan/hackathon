@@ -91,17 +91,17 @@ DATABASES = {
 
 MONGODB_DATABASES = {
     "default": {
-        "name": "healthcarr",
-        "host": "localhost",
+        "name": "hardforks",
+        "host": "127.0.0.1",
         "port": 27017,
         "tz_aware": True,  # if you use timezones in django (USE_TZ = True)
     }
 }
 
-mongoengine.connect(
-    db="healthcarr",
-    host="localhost"
-)
+# mongoengine.connect(
+#     db="hardforks",
+#     host="mongodb://127.0.0.1:27017"
+# )
 
 
 # Password validation

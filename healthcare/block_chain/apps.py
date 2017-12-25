@@ -1,5 +1,5 @@
-# from django.apps import AppConfig
+from django.apps import AppConfig
 
 
-# class BlockChainConfig(AppConfig):
-#     name = 'block_chain'
+class BlockChainConfig(AppConfig):
+    name = 'block_chain'

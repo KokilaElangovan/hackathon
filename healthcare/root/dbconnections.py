@@ -1,14 +1,11 @@
 import pymongo
 from pymongo import MongoClient
-from config import config
 
-class MongoDB:
-    def __init__(self):
-        self.client = self.connect();
-        
+class MongoDB:    
     def connect(self):
         client = MongoClient('mongodb://127.0.0.1:27017');
-        return client;
+        db = client['blockchain']['chain']
+        return db;
     
     def insert(self, collection, data, multiple = False):
         db = self.client[self.collection];
