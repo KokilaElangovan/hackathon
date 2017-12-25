@@ -14,7 +14,8 @@ from users.views import (
     AddPrescriptionView,
     ListPrescriptionView,
     DoctorListSpecialityView,
-    PatientAppoinmentListView
+    PatientAppoinmentListView,
+    RejectRequestView
     )
 
 urlpatterns = [
@@ -31,4 +32,5 @@ urlpatterns = [
     url(r'^requested-patient-list/$', RequestedPatientList.as_view()),
     url(r'^approved-patient-list/$', ApprovelPatientList.as_view()),
     url(r'^approved-patient-list/$', ApprovelPatientList.as_view()),
+    url(r'^reject-request/$', RejectRequestView.as_view()),
 ]

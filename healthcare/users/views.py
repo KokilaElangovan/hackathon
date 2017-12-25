@@ -223,13 +223,27 @@ class PatientAppoinmentListView(APIView):
 
     def get_object(self, user_id):
         try:
-            return DoctorPatientMapping.objects.filter(patient_id=1)
+            return DoctorPatientMapping.objects.filter(patient_id=user_id)
         except DoctorPatientMapping.DoesNotExist:
             raise Http404
 
     def get(self, request):
         doctorpatient = self.get_object(request.user.id)
         serialzer = PatientAppoinmentListSerializer(doctorpatient, many=True)
+        return Response(serialzer.data)
+
+
+class RejectRequestView(APIView):
+
+    def get_object(self, user_id, doctor_id):
+        try:
+            return DoctorPatientMapping.objects.filter(patient_id=1, doctor_id=doctor_id, status=2)
+        except DoctorPatientMapping.DoesNotExist:
+            raise Http404
+
+    def get(self, request):
+        doctorpatient = self.get_object(user_id, request.user.id)
+        doctorpatient.delete()
         return Response(serialzer.data)
 
 

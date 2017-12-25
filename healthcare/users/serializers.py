@@ -32,7 +32,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'groups', 'username', 'userprofile', 'password']
+        fields = ['id', 'email', 'groups', 'username', 'userprofile']
         write_only_fields = ['password']
 
 class DoctorUserProfileSerializer(serializers.ModelSerializer):
