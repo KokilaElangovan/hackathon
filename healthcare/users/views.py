@@ -14,7 +14,8 @@ from users.serializers import (
                                 AppoinmentSerializer,
                                 PatientProfileSerializer,
                                 PatientSerializer,
-                                AddPrescriptionSerializer,
+                                DoctorListSpecialitySerializer,
+                                PatientAppoinmentListSerializer
                                 )
 from users.models import UserProfile
 from rest_framework.views import APIView
@@ -38,7 +39,7 @@ class DoctorListView(APIView):
 
     def get_object(self):
         try:
-            return User.objects.filter(groups=1)
+            return User.objects.filter(groups=2)
         except User.DoesNotExist:
             raise Http404
 
@@ -200,19 +201,35 @@ class ListPrescriptionView(APIView):
 
     def post(self, request):
         list_prescription_url = 'http://172.24.144.96:8000/block_chain/get_record/'
-        response = requests.post(list_prescription_url, json.dumps({ "public_key": "asdfasdfsdioh23490489-f"}), headers = {'content-type': 'application/x-ww-form-url-encoded'})
+        response = requests.post(list_prescription_url, json.dumps({ "public_key": "467053853bbf662a20d9ba11a398288f"}), headers = {'content-type': 'application/x-ww-form-url-encoded'})
         json_loads = json.loads(response.content)
         return Response(json_loads, status=status.HTTP_200_OK)
 
 class DoctorListSpecialityView(APIView):
 
-    def get_object(self):
+    def get_object(self, request):
         try:
-            return User.objects.filter(groups=1)
+            return User.objects.filter(groups=2, userprofile__speciality_id__speciality=request.GET['speciality'])
         except User.DoesNotExist:
             raise Http404
 
     def get(self, request):
-        user = self.get_object()
-        serialzer = DoctorListSerializer(user, many=True)
+        user = self.get_object(request)
+        serialzer = DoctorListSpecialitySerializer(user, many=True)
         return Response(serialzer.data)
+
+
+class PatientAppoinmentListView(APIView):
+
+    def get_object(self, user_id):
+        try:
+            return DoctorPatientMapping.objects.filter(patient_id=1)
+        except DoctorPatientMapping.DoesNotExist:
+            raise Http404
+
+    def get(self, request):
+        doctorpatient = self.get_object(request.user.id)
+        serialzer = PatientAppoinmentListSerializer(doctorpatient, many=True)
+        return Response(serialzer.data)
+
+

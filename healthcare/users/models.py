@@ -31,7 +31,8 @@ class UserProfile(models.Model):
     public_key = models.CharField(max_length=200, default='')
     address = models.TextField(default='')
     experiance = models.IntegerField(null=True, blank=True)
-    speciality_id = models.OneToOneField(Specialities, unique=True, null=True, blank=True)
+    speciality_id = models.ForeignKey(Specialities, null=True, blank=True)
+    consultency_fees = models.IntegerField(null=True, blank=True)
 
 
 class DoctorPatientMapping(models.Model):

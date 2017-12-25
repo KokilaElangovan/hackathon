@@ -14,6 +14,7 @@ from users.views import (
     AddPrescriptionView,
     ListPrescriptionView,
     DoctorListSpecialityView,
+    PatientAppoinmentListView
     )
 
 urlpatterns = [
@@ -22,10 +23,12 @@ urlpatterns = [
     url(r'^user/(?P<user_id>[0-9]+)/$', UserDetailView.as_view()),
     url(r'^user/$', CreateUser.as_view()),
     url(r'^user/my-profile/$', MyProfileView.as_view()),
+    url(r'^user/list-patient-appoinments/$', PatientAppoinmentListView.as_view()),
+    url(r'^user/doctor-list/speciality-wise/$', DoctorListSpecialityView.as_view()),
     url(r'^user/doctor-list/$', DoctorListView.as_view()),
     url(r'^appoinment-request/(?P<doctor_id>[0-9]+)/$', AppointmentRequestView.as_view()),
     url(r'^approval-request/(?P<patient_id>[0-9]+)/$', ApprovalRequestView.as_view()),
     url(r'^requested-patient-list/$', RequestedPatientList.as_view()),
     url(r'^approved-patient-list/$', ApprovelPatientList.as_view()),
-    url(r'^user/doctor-list/speciality-wise/$', DoctorListSpecialityView.as_view()),
+    url(r'^approved-patient-list/$', ApprovelPatientList.as_view()),
 ]
