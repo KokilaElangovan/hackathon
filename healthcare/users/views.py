@@ -59,7 +59,7 @@ class AppointmentRequestView(APIView):
 
     def post(self, request, doctor_id):
         doctor = self.get_object(doctor_id)
-        data = { "doctor": doctor_id, "patient":request.user.id }
+        data = { "doctor": doctor_id, "patient":request.user.id, "check_up_time": request.data.get("check_up_time", None)}
         serializer = AppoinmentSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
@@ -129,7 +129,7 @@ class UserDetailView(APIView):
 class RequestedPatientList(APIView):
 
     def get(self, request):
-        requested_patients = User.objects.filter(doctor_mapping_id=request.user.id, doctor_mapping_id__status=1)
+        requested_patients = User.objects.filter(patient_mapping_id=request.user.id, doctor_mapping_id__status=1)
         serializer = PatientSerializer(requested_patients, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -151,28 +151,23 @@ class AddPrescriptionView(APIView):
     def post(self, request, user_id):
         user = self.get_object(user_id)
         serializer = UserSerializer(user)
-        public_key = serializer.data.get('public_key', None)
-        if True:
-            self.add_prescription_in_blockchain(request, serializer)
+        public_key = serializer.data.get('userprofile').get('public_key', None)
+        if public_key:
+            return self.add_prescription_in_blockchain(request, serializer)
         else:
             generate_public_key = 'http://172.24.144.96:8000/block_chain/public_key/'
-            try:
-                response = requests.get(generate_public_key)
-                print(response.content)
-                user_obj = UserProfile.objects.filter(user_id=user_id).update(public_key=json.loads(response.content).get('public_key'))
-                if response.status_code == 200:
-                    add_prescription_in_blockchain(request, serializer)
-            except Exception:
-                return Response({'error': ['Something went wrong try again']}, status=status.HTTP_400_BAD_REQUEST)
+            response = requests.get(generate_public_key)
+            print(response.content)
+            user_obj = UserProfile.objects.filter(user_id=user_id).update(public_key=json.loads(response.content).get('public_key'))
+            if response.status_code == 200:
+                response = self.add_prescription_in_blockchain(request, serializer)
+            else:
+                return Response({'error': ['Something went wrong with public key']}, status=status.HTTP_400_BAD_REQUEST)
+
 
     def add_prescription_in_blockchain(self, request, serializer):
         add_prescriptoin_url = 'http://172.24.144.96:8000/block_chain/add_record/'
-        # data = {
-        # "personal_details": serializer.data,
-        # "medical_details": request.data,
-        # "public_key": serializer.data.get('userprofile').get('public_key')
-        # }
-        serializer.data['public_key'] = '' if serializer.data.get('public_key') == None else serializer.data.get('public_key')
+        serializer.data['userprofile']['public_key'] = '' if serializer.data.get('userprofile').get('public_key') == None else serializer.data.get('userprofile').get('public_key')
         userprofile = serializer.data.get('userprofile', '')
         if userprofile:
             userprofile = dict(userprofile)
@@ -190,16 +185,15 @@ class AddPrescriptionView(APIView):
                 "medical_details": request.data,
                 "public_key": userprofile.pop("public_key")
         }
-        try:
-            response = requests.post(add_prescriptoin_url, json.dumps(data), headers = {'content-type': 'application/x-ww-form-url-encoded'})
-            return Response(response.json(), status=status.HTTP_200_OK)
-        except Exception:
+        response = requests.post(add_prescriptoin_url, json.dumps(data), headers = {'content-type': 'application/json'})
+        if response.status_code == 200:
+            return Response(status=status.HTTP_200_OK)
+        else:
             return Response({'error': ['Something went wrong try again']}, status=status.HTTP_400_BAD_REQUEST)
-
 
 class ListPrescriptionView(APIView):
 
-    def post(self, request):
+    def get(self, request):
         list_prescription_url = 'http://172.24.144.96:8000/block_chain/get_record/'
         response = requests.post(list_prescription_url, json.dumps({ "public_key": "467053853bbf662a20d9ba11a398288f"}), headers = {'content-type': 'application/x-ww-form-url-encoded'})
         json_loads = json.loads(response.content)
@@ -241,7 +235,7 @@ class RejectRequestView(APIView):
         except DoctorPatientMapping.DoesNotExist:
             raise Http404
 
-    def get(self, request):
+    def delete(self, request, patient_id):
         doctorpatient = self.get_object(user_id, request.user.id)
         doctorpatient.delete()
         return Response(serialzer.data)

@@ -19,12 +19,12 @@ from users.views import (
     )
 
 urlpatterns = [
+    url(r'^user/list-patient-appoinments/$', PatientAppoinmentListView.as_view()),
     url(r'^add-prescription/(?P<user_id>[0-9]+)/$', AddPrescriptionView.as_view()),
     url(r'^list-prescription/$', ListPrescriptionView.as_view()),
     url(r'^user/(?P<user_id>[0-9]+)/$', UserDetailView.as_view()),
     url(r'^user/$', CreateUser.as_view()),
     url(r'^user/my-profile/$', MyProfileView.as_view()),
-    url(r'^user/list-patient-appoinments/$', PatientAppoinmentListView.as_view()),
     url(r'^user/doctor-list/speciality-wise/$', DoctorListSpecialityView.as_view()),
     url(r'^user/doctor-list/$', DoctorListView.as_view()),
     url(r'^appoinment-request/(?P<doctor_id>[0-9]+)/$', AppointmentRequestView.as_view()),
@@ -32,5 +32,5 @@ urlpatterns = [
     url(r'^requested-patient-list/$', RequestedPatientList.as_view()),
     url(r'^approved-patient-list/$', ApprovelPatientList.as_view()),
     url(r'^approved-patient-list/$', ApprovelPatientList.as_view()),
-    url(r'^reject-request/$', RejectRequestView.as_view()),
+    url(r'^reject-request/(?P<patient_id>[0-9]+)/$', RejectRequestView.as_view()),
 ]
