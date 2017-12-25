@@ -64,9 +64,7 @@ def get_notified(request):
             notify(record=record)
 
 def get_user_records(request):
-    print request.body
     user_records=BlockChain().get_user_records(json.loads(request.body)['public_key'])
-    print type(user_records), '--------list--------'
     return HttpResponse(json.dumps(user_records))
 
 
@@ -75,11 +73,9 @@ def new_record(request):
     block = Block()
     # blockchain = BlockChain()
     # latest_block = blockchain.latest_block
-    print data , '---------------------data---------------'
     record = Record(data['public_key'], data['personal_details'], data['medical_details'])
     block.add_record(record)
-
-    return HttpResponse(status=200, content_type="application/json")
+    return HttpResponse(json.dumps({'status':200}))
 
 def join_request(request):
     ip = get_ip(request)
@@ -152,9 +148,9 @@ def encryption(secret, data):
     encoded = encodeAES(cipher, data)
     return encoded
 
-def decryption(secret, data):
-    secret = binascii.unhexlify(secret)
-    DecodeAES = lambda c, e : c.decrypt(base64.b64decode(e)).rstrip(padding)
-    cipher = AES.new(secret)
-    decode = DecodeAES(cipher, data)
-    return decode
+# def decryption(secret, data):
+#     secret = binascii.unhexlify(secret)
+#     DecodeAES = lambda c, e : c.decrypt(base64.b64decode(e)).rstrip(padding)
+#     cipher = AES.new(secret)
+#     decode = DecodeAES(cipher, data)
+#     return decode

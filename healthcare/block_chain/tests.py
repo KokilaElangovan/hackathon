@@ -9,7 +9,6 @@ import requests
 from django.conf import settings
 from bson.json_util import dumps, loads
 from root.dbconnections import MongoDB
-# Instantiate the Blockchain
 
 class Node:
     def __init__(self):
@@ -49,27 +48,21 @@ class Block:
             'previous_hash': self.previous_block_hash(),
         }
         self.save_block(block)
-        BlockChain.latest_block = block
         
     def previous_block_hash(self):
-        BlockChain.get_latest_block().get('previous_record_hash')
+        BlockChain.get_latest_block().get('previous_block_hash', 'previous_block_hash')
 
     @property
     def latest_block_id(self):
         return BlockChain.get_latest_block().get('_id', 0)
 
     def add_record(self, record):
-        import pdb;pdb.set_trace()
-        if 'records' in BlockChain.get_latest_block().keys() and len(BlockChain.get_latest_block()['records']) <= 3:
+        blockchain = BlockChain.get_latest_block()
+        if 'records' in blockchain.keys() and len(blockchain['records']) <= 3:
             self.save_record(BlockChain.get_latest_block(), record)
-            # new_record = self.new_record(record, self.previous_block_hash())
-            # self.save_record(new_record)
         else:
-            # new_block = BlockChain.get_latest_block()['records'].update(record)
             self.new_block()
             self.save_record(BlockChain.get_latest_block(), record)
-
-        # notify(record=record.get_record_as_json())
 
     def save_block(self, block):
         db = MongoDB().connect()
@@ -83,7 +76,6 @@ class Block:
 class Record:
     def __init__(self, public_key, personal_details, medical_details):
         self.id = self.latest_record_id() + 1
-        print self.latest_record_id() + 1, '------------record------latestid'
         self.public_key = public_key
         self.previous_hash = self.previous_record_hash
         self.personal_details = personal_details
@@ -167,22 +159,27 @@ class BlockChain:
         db = MongoDB().connect()
         records=json.loads(dumps(db.find()))
         user_records = []
-        for block in range(4,records[-1]['_id']):
+        for block in range(1,records[-1]['_id']):
             for record in records[block]['records']:
               if record['public_key'] == public_key:
+                record['personal_details'] = decryption(public_key, record['personal_details'])
                 user_records.append(record)
         return user_records
-        #Fetch all records with given public key
 
     @staticmethod
     def get_latest_block():
         db = MongoDB().connect()
-        latest_block = dumps(db.find().sort("_id",-1).limit(1))
-        print len(latest_block), '-----------length latest block----------------'
-        if len(latest_block) < 1:
-            return loads(latest_block)[0]
+        latest_block = json.loads(dumps(db.find().sort("_id",-1).limit(1)))
+        if len(latest_block) > 0:
+            return latest_block[0]
         else :
             return {}
+    def decryption(secret, data):
+        secret = binascii.unhexlify(secret)
+        DecodeAES = lambda c, e : c.decrypt(base64.b64decode(e)).rstrip(padding)
+        cipher = AES.new(secret)
+        decode = DecodeAES(cipher, data)
+        return decode
 
     def validate_chain(self, chain):
         """
@@ -197,9 +194,6 @@ class BlockChain:
 
         while current_index < len(chain):
             block = chain[current_index]
-            print(last_block)
-            print(block)
-            print("\n-----------\n")
             # Check that the hash of the block is correct
             if block['previous_hash'] != Block.hash(last_block):
                 return False
